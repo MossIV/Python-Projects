@@ -12,4 +12,8 @@ while True:
 
     print(f"The pig latin word of {word} is {new_word}")
     
-    
+    tryAgain = input("\n\nTry again? (Press Enter else n to quit)\n ")
+    if tryAgain.lower() == "n":
+        break
+
+input("\nPress Enter to exit.")
