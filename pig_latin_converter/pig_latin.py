@@ -1,5 +1,5 @@
 """
-This script takes a word as input and uses indexing and 
+This script takes a word as input and uses indexing and
 slicing to return its Pig Latin equivalent.
 """
 
@@ -11,7 +11,7 @@ while True:
         new_word = word[1:] + word[0:1] + "ay"
 
     print(f"The pig latin word of {word} is {new_word}")
-    
+
     tryAgain = input("\n\nTry again? (Press Enter else n to quit)\n ")
     if tryAgain.lower() == "n":
         break
