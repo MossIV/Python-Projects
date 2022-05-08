@@ -10,4 +10,6 @@ while True:
     else:
         new_word = word[1:] + word[0:1] + "ay"
 
+    print(f"The pig latin word of {word} is {new_word}")
+    
     
