@@ -9,9 +9,9 @@ sentence = input("Please type the sentence: ")
 alphabet = {}
 
 for i in sentence:
-    if(i in "abcdefghijklmnopqrstuvwxyz"):
+    if i in "abcdefghijklmnopqrstuvwxyz":
         i = i.lower()
-        if(i in alphabet.keys()):
+        if i in alphabet.keys():
             alphabet[i].append(i)
         else:
             alphabet[i] = [i]
