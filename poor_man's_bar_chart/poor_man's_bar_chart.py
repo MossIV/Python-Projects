@@ -16,4 +16,6 @@ for i in sentence:
         else:
             alphabet[i] = [i]
 
-pprint.pprint(alphabet)
+sorted_alphabet = dict( sorted(alphabet.items()) )
+
+pprint.pprint(sorted_alphabet)
