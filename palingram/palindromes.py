@@ -28,7 +28,6 @@ def findPalingrams():
     palingrams = []
 
     for i in wordList:
-        print(i)
         end = len(i)
         rev_word = i[::-1]
 
