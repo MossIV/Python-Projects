@@ -11,7 +11,7 @@ alphabet = {}
 for i in sentence:
     if i in "abcdefghijklmnopqrstuvwxyz":
         i = i.lower()
-        if i in alphabet.keys():
+        if i in alphabet:
             alphabet[i].append(i)
         else:
             alphabet[i] = [i]
