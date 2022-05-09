@@ -40,6 +40,6 @@ def findPalingrams():
                     palingrams.append((rev_word[:end-j],i))
     return palingrams
 
-sorted_palingrams = sorted(findPalingrams)
+sorted_palingrams = sorted(findPalingrams())
 
 pprint.pprint(sorted_palingrams)
