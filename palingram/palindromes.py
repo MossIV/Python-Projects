@@ -26,16 +26,16 @@ for i in wordList:
 # pprint.pprint(palindromes)
 def findPalingrams():
     palingrams = []
-
-    for i in wordList:
+    words = set(wordList)
+    for i in words:
         end = len(i)
         rev_word = i[::-1]
 
         if end > 1:
             for j in range(end):
-                if (i[j:] == rev_word[:end-j]) & (rev_word[end-j:] in wordList):
+                if (i[j:] == rev_word[:end-j]) & (rev_word[end-j:] in words):
                     palingrams.append((i,rev_word[end-j:]))
-                if (i[j:] == rev_word[end-j:]) & (rev_word[:end-j] in wordList):
+                if (i[j:] == rev_word[end-j:]) & (rev_word[:end-j] in words):
                     palingrams.append((rev_word[:end-j],i))
     return palingrams
 
