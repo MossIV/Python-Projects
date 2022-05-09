@@ -23,4 +23,23 @@ for i in wordList:
     if ((len(i)>1) & (i == i[::-1])):
         palindromes.append(i)
 
-pprint.pprint(palindromes)
+# pprint.pprint(palindromes)
+def findPalingrams():
+    palingrams = []
+
+    for i in wordList:
+        print(i)
+        end = len(i)
+        rev_word = i[::-1]
+
+        if end > 1:
+            for j in range(end):
+                if (i[j:] == rev_word[:end-j]) & (rev_word[end-j:] in wordList):
+                    palingrams.append((i,rev_word[end-j:]))
+                if (i[j:] == rev_word[end-j:]) & (rev_word[:end-j] in wordList):
+                    palingrams.append((rev_word[:end-j],i))
+    return palingrams
+
+sorted_palingrams = sorted(findPalingrams)
+
+pprint.pprint(sorted_palingrams)
