@@ -17,6 +17,8 @@ def load(file):
         sys.exit(1)
 
 wordList = load("palingram\words.txt")
+palindromesB = []
+
 
 def findPalindromes():
     palindromes = []
@@ -24,6 +26,15 @@ def findPalindromes():
         if ((len(i)>1) & (i == i[::-1])):
             palindromes.append(i)
     pprint.pprint(palindromes)
+
+def isPalindrome(word):
+    if len(word) in (0,1):
+        return True;
+    elif (word[0] == word[len(word)-1]):
+        word = word[1:len(word)-1]
+        return(isPalindrome(word))
+    else:
+        return False
 
 def findPalingrams():
     palingrams = []
@@ -44,6 +55,11 @@ for i in wordList:
     if (i in 'abcdefghijklmnopqrstuvwxyz'):
         wordList.remove(i);
 
+for i in wordList:
+    if(isPalindrome(i)):
+        palindromesB.append(i)
+pprint.pprint(palindromesB)
+
 sorted_palingrams = sorted(findPalingrams())
 
-pprint.pprint(sorted_palingrams)
+# pprint.pprint(sorted_palingrams)
