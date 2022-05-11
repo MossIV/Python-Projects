@@ -9,6 +9,10 @@ import shutil
 from PIL import Image, ImageOps
 
 def del_folders(folder):
+    content = os.listdir()
+    for item in content:
+        if os.path.isdir(item) and item.startswith(folder):
+            shutil.rmtree(item)
     return
 
 def crop_images():
@@ -33,4 +37,3 @@ def main():
     clean_folder()
 
     print("Done \n")
-    
