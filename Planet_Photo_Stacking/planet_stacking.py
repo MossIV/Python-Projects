@@ -56,3 +56,5 @@ def main():
     clean_folder(prefix_to_save='cropped')
 
     print("Done \n")
+
+main();
