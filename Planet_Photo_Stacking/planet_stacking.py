@@ -9,6 +9,9 @@ import shutil
 from PIL import Image, ImageOps
 
 def del_folders(folder):
+    """
+    Delete folders if it matches the parameter
+    """
     content = os.listdir()
     for item in content:
         if os.path.isdir(item) and item.startswith(folder):
@@ -18,7 +21,14 @@ def del_folders(folder):
 def crop_images():
     return
 
-def clean_folder():
+def clean_folder(prefix_to_save):
+    """
+    Removes files that dont have the defined prefix
+    """
+    files = os.listdir()
+    for file in files:
+        if not file.startswith(prefix_to_save):
+            os.remove(file)
     return
 
 def main():
