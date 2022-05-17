@@ -29,3 +29,4 @@ stacked.show()
 
 os.chdir('..')
 stacked.save('jupiter_stacked.tif','TIFF')
+print('done')
