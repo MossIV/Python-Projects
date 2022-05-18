@@ -24,7 +24,7 @@ med_blue = [x[len(blue_data)] for x in zip(*blue_data)]
 merged_data = list(zip(med_red,med_green,med_blue))
 stacked = Image.new('RGB', (img_size))
 stacked.putdata(merged_data)
-stacked.show
+stacked.show()
 
 os.chdir('..')
 stacked.save('moon_no_plane.tif','TIFF')
