@@ -9,4 +9,20 @@ def main():
     img_enh.save('enhanced.tif', 'TIFF')
 
 def enhance_image(image):
-    return
+    enhancer = ImageEnhance.Brightness(image)
+    img_enh = enhancer.enhance(0.75)
+
+    enhancer = ImageEnhance.Contrast(img_enh)
+    img_enh = enhancer.enhance(1.6)
+
+    enhancer = ImageEnhance.Color(img_enh)
+    img_enh = enhancer.enhance(1.7)
+
+    img_enh = img_enh.rotate(angle=133, expand=True)
+
+    img_enh = img_enh.filter(ImageFilter.SHARPEN)
+
+    return img_enh
+
+if __name__ == '__main__':
+    main()
