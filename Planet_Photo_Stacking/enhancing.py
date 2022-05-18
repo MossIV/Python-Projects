@@ -2,6 +2,9 @@
 from PIL import Image, ImageFilter, ImageEnhance
 
 def main():
+    """
+    Main function for opening file
+    """
     in_file = 'jupiter_stacked.tif'
     img = Image.open(in_file)
     img_enh = enhance_image(img)
@@ -9,6 +12,9 @@ def main():
     img_enh.save('enhanced.tif', 'TIFF')
 
 def enhance_image(image):
+    """
+    modifies the image with filters
+    """
     enhancer = ImageEnhance.Brightness(image)
     img_enh = enhancer.enhance(0.75)
 
