@@ -6,6 +6,7 @@ worked" logic lives in the brain, so a routine never needs its own timing
 hacks and every action gets verified the same way.
 """
 
+from .building_panel import BuildingPanelRoutine
 from .village import VillageRoutine
 
-__all__ = ["VillageRoutine"]
+__all__ = ["BuildingPanelRoutine", "VillageRoutine"]

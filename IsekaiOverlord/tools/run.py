@@ -45,7 +45,7 @@ from iwol import (  # noqa: E402
     SentinelActuator,
     find_windows,
 )
-from iwol.routines import VillageRoutine  # noqa: E402
+from iwol.routines import BuildingPanelRoutine, VillageRoutine  # noqa: E402
 
 VK_F12 = 0x7B
 
@@ -157,11 +157,8 @@ def main() -> int:
 
     routines = []
     if not args.no_village:
-        village = VillageRoutine()
-        routines.append(village)
-        if village.layout is None:
-            print("! village_layout.json not found — the village routine will refuse to act")
-            print("  (that is intentional; see the routine's docstring)")
+        routines.append(VillageRoutine())
+        routines.append(BuildingPanelRoutine())
 
     journal = Journal(args.journal, keep_frames=args.keep_frames)
     brain = Brain(

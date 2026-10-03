@@ -163,7 +163,17 @@ class Ocr:
 # helpers for reading numbers out of OCR text
 # --------------------------------------------------------------------------- #
 
-_NUM = re.compile(r"-?\d[\d,._ ]*")
+# No space in the character class on purpose.  OCR text from a region is the
+# region's lines joined with " ", so a space means "a different value", not a
+# thousands separator: '89 1.20T' is gems-then-gold, and a space-tolerant regex
+# would fuse it into a single nonsense number (89.1e9 instead of 89 and 1.2e12).
+_NUM = re.compile(r"-?\d[\d,._]*")
+
+
+# Magnitude suffixes as they appear in this game's UI.  Note 'T' for trillion --
+# omitting it makes "1.13T" parse as 1.13, a 1e12 error on the number that
+# decides whether an upgrade is affordable.
+_MULT = {"k": 1e3, "m": 1e6, "b": 1e9, "t": 1e12}
 
 
 def parse_number(text: str) -> float | None:
@@ -175,25 +185,30 @@ def parse_number(text: str) -> float | None:
     current HP), not 3.43 million, purely because the string happens to end in
     'K'.
     """
+    return next(iter(parse_numbers(text)), None)
+
+
+def parse_numbers(text: str) -> list[float]:
+    """Every number in a UI string, in order.
+
+    Some regions legitimately hold several values (a currency bar reads
+    ``'89 1.20T'`` = gems then gold).  Taking the first would silently pick the
+    wrong currency, so callers that know the layout can index instead.
+    """
+    out: list[float] = []
     cleaned = text.strip()
-    m = _NUM.search(cleaned)
-    if not m:
-        return None
+    for m in _NUM.finditer(cleaned):
+        raw = m.group()
+        rest = cleaned[m.end() :].lstrip()
+        mult = _MULT.get(rest[0].lower(), 1.0) if rest else 1.0
 
-    raw = m.group()
-    rest = cleaned[m.end() :].lstrip()
-    mult = 1.0
-    if rest and rest[0] in "KkMmBb":
-        mult = {"k": 1e3, "m": 1e6, "b": 1e9}[rest[0].lower()]
-
-    raw = raw.replace(",", "").replace("_", "").replace(" ", "")
-    # '3.800' style thousands separators vs a real decimal point: a trailing
-    # group of exactly 3 digits after a dot is treated as a separator.
-    if "." in raw:
-        head, _, tail = raw.rpartition(".")
-        if len(tail) == 3 and head:
-            raw = head + tail
-    try:
-        return float(raw) * mult
-    except ValueError:
-        return None
+        raw = raw.replace(",", "").replace("_", "").replace(" ", "")
+        if "." in raw:
+            head, _, tail = raw.rpartition(".")
+            if len(tail) == 3 and head:
+                raw = head + tail
+        try:
+            out.append(float(raw) * mult)
+        except ValueError:
+            continue
+    return out

@@ -19,25 +19,43 @@ clicking, rather than reading the game's memory or injecting into its process.
 |---|---|
 | Capture (Windows `PrintWindow`) | ✅ verified on the live Steam build |
 | OCR (RapidOCR + onnxruntime) | ✅ verified, coordinates match the UI |
-| Screen classifier | ✅ 3 screens mapped, all classify ≥0.86 |
+| Screen classifier | ✅ 4 screens mapped, all classify ≥0.86 |
 | Actuators (dry-run / PostMessage / SendInput) | ✅ implemented and unit-tested |
 | Brain loop, verification, budgets, kill switch | ✅ implemented and unit-tested |
 | Economy upgrade planner | ✅ implemented, unit-tested |
-| Village building regions (7 buildings) | ✅ calibrated — costs and incomes read correctly |
-| Village routine | ⚠️ **logic done, blocked on the meaning of the on-screen numbers** |
-| Tests | ✅ 93 passing, 1 xfailed |
+| Village screen (7 buildings) | ✅ calibrated |
+| Building panel (upgrade + workers) | ✅ calibrated, `upgrade_btn` reads `UPGRADE 1.13T` |
+| Village routine | ✅ opens each building's panel in turn |
+| Building panel routine | ✅ assigns workers, then upgrades within budget |
+| Tests | ✅ 116 passing, 1 xfailed |
 
-**Honest summary:** the perception and control stack is finished and proven
-against the real game, including calibrated read regions for all seven village
-buildings. The first automation routine is written but still refuses to run:
-its planner needs to know whether the big number on each building card is a
-*cost* or *accumulated yield*, and guessing wrong would spend coins stupidly.
-It says so out loud instead of guessing.
+**Honest summary:** the whole loop runs end to end on real screens — capture →
+recognise → decide → click → verify — with the two routines chained: the village
+screen opens a building's panel, the panel routine assigns free workers and then
+upgrades if the cost is affordable and inside the run budget, then leaves.
+
+The routines have **not yet been run armed against the live game** — that needs
+your go-ahead, and `tools/run.py` stays in dry-run until you pass `--arm`.
+
+### What the UI actually does (established by experiment, not assumption)
+
+A before/after capture of a real click settled this, and it contradicted the
+original design:
+
+* The gold diamond button on a village building card **opens a management panel**.
+  It is not an upgrade button, and the top number on the card is not income.
+* The panel is where the real **`UPGRADE`** button lives, showing its gold cost
+  (`1.13T` for `Hot Spring Lvl 25` in the captured frame).
+* The panel also holds the **worker** system: `Current workers 2/5`,
+  `Available workers 9`, worker cards with bonuses like `Works on Farm +75%`, and
+  an **`ADD THE BEST WORKERS`** auto-assign button. That button is free, so the
+  routine spends it first — best return on screen, zero risk.
 
 One known weakness is tracked rather than hidden: OCR reads `b2_income` as
 `1.151` instead of `1.15T` (the suffix misreads as a digit). A misread suffix
-changes a value by 10⁹, so the planner must not trust these numbers until
-there's a plausibility check — see the xfail test in `tests/test_screens.py`.
+changes a value by 10⁹ — this is exactly why `T` missing from the magnitude map
+was caught by tests rather than in your economy. See the xfail in
+`tests/test_screens.py`.
 
 ## Quick start
 
@@ -61,6 +79,9 @@ python tools/run.py --arm --actuator sendinput --steps 200 --max-gold 50000
 | `tools/run.py` | the bot. `--check` to classify once, `--arm` to actually play |
 | `tools/probe.py` | OCR a live screen, print coordinates in fractions, draw an overlay |
 | `tools/tour.py` | record labelled frames while you click through the UI |
+| `tools/before_after.py` | snapshot, let a human act, snapshot again, diff it |
+| `tools/verify_regions.py` | calibrate region boxes against values you know are on screen |
+| `tools/snap_buttons.py` | locate action buttons by local template search, with deltas |
 | `tools/grab.py` | minimal single-frame capture probe |
 
 ## Safety rails

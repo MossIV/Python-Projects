@@ -6,6 +6,8 @@ run with no game, no window and no input injection.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 import numpy as np
 import pytest
 
@@ -71,15 +73,28 @@ class StubRoutine:
         return self.outcome
 
 
+@dataclass
+class LiveRecordingActuator(DryRunActuator):
+    """Records actions but reports dry_run=False, so the brain actually verifies.
+
+    The brain deliberately skips verification under a dry-run actuator (nothing
+    is sent, so nothing can change), so stall detection can only be exercised
+    with an actuator that claims to be live.  Re-decorating with @dataclass is
+    required: the inherited __init__ would otherwise set dry_run=True.
+    """
+
+    dry_run: bool = False
+
+
 def make_frame(value: int = 30) -> Frame:
     return Frame(np.full((60, 80, 3), value, dtype=np.uint8), (0, 0))
 
 
-def make_brain(capture, classifier, routines, config=None, should_stop=None):
+def make_brain(capture, classifier, routines, config=None, should_stop=None, actuator=None):
     return Brain(
         capture=capture,
         ocr=None,
-        actuator=DryRunActuator(),  # inert; these tests must never inject input
+        actuator=actuator or DryRunActuator(),  # inert by default
         classifier=classifier,
         routines=routines,
         journal=NullJournal(),
@@ -203,7 +218,35 @@ def test_unchanged_screen_counts_as_a_miss_and_aborts():
                           RoutineOutcome(RoutineOutcome.DONE, "clicked", spent={"gold": 1}))
     cfg = BrainConfig(step_delay=0, settle_time=0, max_gold_spent=100, max_consecutive_misses=2)
     # identical frames => the action appears to do nothing
+    brain = make_brain(StubCapture([make_frame(50)]), StubClassifier(["village"]), [routine], cfg,
+                       actuator=LiveRecordingActuator())
+    report = brain.run(max_steps=10)
+    assert report.misses == 2
+    assert "no visible effect" in report.stopped_because
+
+
+def test_dry_run_skips_verification_so_the_plan_can_be_read():
+    """A dry run sends nothing, so nothing can change.  If verification ran,
+    every dry run would abort on the stall detector before you could read what
+    it *would* have done."""
+    routine = StubRoutine("village", ["village"],
+                          RoutineOutcome(RoutineOutcome.DONE, "clicked", acted=True))
+    cfg = BrainConfig(step_delay=0, settle_time=0, max_consecutive_misses=2)
     brain = make_brain(StubCapture([make_frame(50)]), StubClassifier(["village"]), [routine], cfg)
+    report = brain.run(max_steps=4)
+    assert report.misses == 0
+    assert report.stopped_because == "max steps reached"
+    assert routine.calls == 4
+
+
+def test_free_action_is_still_verified_when_live():
+    """Acting without spending must still be verified -- a click that silently
+    misses is most dangerous when it costs nothing and so goes unnoticed."""
+    routine = StubRoutine("village", ["village"],
+                          RoutineOutcome(RoutineOutcome.DONE, "opened a panel", acted=True))
+    cfg = BrainConfig(step_delay=0, settle_time=0, max_consecutive_misses=2)
+    brain = make_brain(StubCapture([make_frame(50)]), StubClassifier(["village"]), [routine], cfg,
+                       actuator=LiveRecordingActuator())
     report = brain.run(max_steps=10)
     assert report.misses == 2
     assert "no visible effect" in report.stopped_because
@@ -219,7 +262,8 @@ def test_changed_screen_resets_the_miss_counter():
     routine = StubRoutine("village", ["village"],
                           RoutineOutcome(RoutineOutcome.DONE, "clicked", spent={"gold": 1}))
     cfg = BrainConfig(step_delay=0, settle_time=0, max_gold_spent=1000, max_consecutive_misses=2)
-    brain = make_brain(Alternating([make_frame()]), StubClassifier(["village"]), [routine], cfg)
+    brain = make_brain(Alternating([make_frame()]), StubClassifier(["village"]), [routine], cfg,
+                       actuator=LiveRecordingActuator())
     report = brain.run(max_steps=4)
     assert report.misses == 0
     assert report.stopped_because == "max steps reached"

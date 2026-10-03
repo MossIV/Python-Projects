@@ -102,6 +102,33 @@ class Context:
     def find_in(self, region: str, needle: str):
         return self.classification.find_in(region, needle)
 
+    def region_center(self, region: str) -> tuple[int, int] | None:
+        """Screen-space centre of a named region, or None if undefined."""
+        spec = self.classification.spec
+        if spec is None:
+            return None
+        box = spec.region_px(self.frame.size).get(region)
+        if box is None:
+            return None
+        x, y, w, h = box
+        return self.frame.to_screen(x + w // 2, y + h // 2)
+
+    def click_region(self, region: str, button: str = "left"):
+        """Click the centre of a named region.
+
+        Returns None when the region isn't defined for this screen -- callers
+        must handle that rather than fall back to a guessed coordinate.
+        """
+        point = self.region_center(region)
+        if point is None:
+            return None
+        return self.actuator.click(point[0], point[1], button)
+
+    def numbers_in(self, region: str) -> list[float]:
+        from .ocr import parse_numbers
+
+        return parse_numbers(self.text_in(region))
+
 
 # --------------------------------------------------------------------------- #
 # routines
@@ -114,10 +141,21 @@ class RoutineOutcome:
     BLOCKED = "blocked"
     ABORT = "abort"
 
-    def __init__(self, status: str, detail: str = "", spent: dict[str, int] | None = None):
+    def __init__(
+        self,
+        status: str,
+        detail: str = "",
+        spent: dict[str, int] | None = None,
+        acted: bool = False,
+    ):
         self.status = status
         self.detail = detail
         self.spent = spent or {}
+        # Whether the routine actually sent input.  Verification keys off this
+        # rather than off spending, because the most dangerous failure is a
+        # click that silently misses -- including clicks that cost nothing,
+        # such as opening a panel.
+        self.acted = bool(acted or self.spent)
 
 
 class Routine(Protocol):
@@ -284,30 +322,43 @@ class Brain:
                     report.actions += 1
 
                 # -- verify the action actually did something ---------------- #
-                if outcome.status in (RoutineOutcome.DONE, RoutineOutcome.CONTINUE) and outcome.spent:
-                    time.sleep(cfg.settle_time)
-                    after = self._grab()
-                    changed = diff_ratio(before, after)
-                    moved = changed >= cfg.min_screen_change
-                    self.journal.event(
-                        "verify",
-                        screen=cls.name,
-                        action=routine.name,
-                        detail=f"{outcome.detail} ({'moved' if moved else 'no change'})",
-                        ok=moved,
-                        changed=changed,
-                    )
-                    if not moved:
-                        consecutive_misses += 1
-                        report.misses += 1
-                        if consecutive_misses >= cfg.max_consecutive_misses:
-                            report.stopped_because = (
-                                f"{consecutive_misses} consecutive actions had no visible effect"
-                            )
-                            self.journal.save_frame(after, "stalled")
-                            break
+                if outcome.status in (RoutineOutcome.DONE, RoutineOutcome.CONTINUE) and outcome.acted:
+                    if getattr(self.actuator, "dry_run", False):
+                        # In a dry run no input is sent, so the screen cannot
+                        # change.  Verifying here would abort every dry run on
+                        # the stall detector -- exactly the run you most want to
+                        # complete so you can read the plan.
+                        self.journal.event(
+                            "verify",
+                            screen=cls.name,
+                            action=routine.name,
+                            detail=f"{outcome.detail} (dry run: not verified)",
+                            ok=True,
+                        )
                     else:
-                        consecutive_misses = 0
+                        time.sleep(cfg.settle_time)
+                        after = self._grab()
+                        changed = diff_ratio(before, after)
+                        moved = changed >= cfg.min_screen_change
+                        self.journal.event(
+                            "verify",
+                            screen=cls.name,
+                            action=routine.name,
+                            detail=f"{outcome.detail} ({'moved' if moved else 'no change'})",
+                            ok=moved,
+                            changed=changed,
+                        )
+                        if not moved:
+                            consecutive_misses += 1
+                            report.misses += 1
+                            if consecutive_misses >= cfg.max_consecutive_misses:
+                                report.stopped_because = (
+                                    f"{consecutive_misses} consecutive actions had no visible effect"
+                                )
+                                self.journal.save_frame(after, "stalled")
+                                break
+                        else:
+                            consecutive_misses = 0
 
                 if outcome.status == RoutineOutcome.BLOCKED:
                     report.stopped_because = f"{routine.name} blocked: {outcome.detail}"

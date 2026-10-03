@@ -49,6 +49,7 @@
       "description": "Village economy screen: Income/Goal bar across the top-centre, 7 building cards each with an income value, an 'N+M' row and a gold diamond action button, quest panel bottom-left. Bottom nav is CONTEXTUAL here (Journey/Expedition replace Companions/Dungeon).",
       "regions": {
         "top_bar": [0.70, 0.0, 0.29, 0.06],
+        "gold": [0.745, 0.005, 0.1, 0.042],
         "hero_card": [0.0, 0.0, 0.3, 0.12],
         "left_rail": [0.0, 0.17, 0.115, 0.5],
         "quest_panel": [0.06, 0.72, 0.22, 0.09],
@@ -86,6 +87,26 @@
       },
       "all_of": ["Temple", "Bank", "Residents", "Journey"],
       "any_of": ["Income", "Goal", "Expedition"],
+      "min_score": 0.6
+    },
+    {
+      "name": "building_panel",
+      "description": "Building management panel, opened by a building card's gold diamond button on the village screen. Left: worker slots and the available-worker grid with an 'ADD THE BEST WORKERS' button. Right: the building card with name, level, production and the real UPGRADE button (which shows its gold cost).",
+      "regions": {
+        "top_bar": [0.7, 0.0, 0.29, 0.06],
+        "gold": [0.745, 0.005, 0.1, 0.042],
+        "workers_header": [0.15, 0.01, 0.23, 0.035],
+        "available_workers": [0.1621, 0.3264, 0.1172, 0.0347],
+        "tab_labels": [0.44, 0.12, 0.06, 0.16],
+        "building_name": [0.6602, 0.684, 0.1641, 0.0417],
+        "building_level": [0.8281, 0.6931, 0.0938, 0.0347],
+        "production": [0.61, 0.775, 0.11, 0.035],
+        "upgrade_btn": [0.6602, 0.8611, 0.125, 0.0903],
+        "add_workers_btn": [0.1602, 0.8681, 0.1094, 0.0694],
+        "back_btn": [0.945, 0.02, 0.05, 0.06]
+      },
+      "all_of": ["Current workers", "Available workers", "UPGRADE"],
+      "any_of": ["Girls", "Pets", "ADD THE"],
       "min_score": 0.6
     }
   ]

@@ -5,7 +5,7 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from iwol.ocr import TextLine, pad_for_ocr, parse_number
+from iwol.ocr import TextLine, pad_for_ocr, parse_number, parse_numbers
 
 
 # --------------------------------------------------------------------------- #
@@ -17,6 +17,9 @@ from iwol.ocr import TextLine, pad_for_ocr, parse_number
     "text,expected",
     [
         ("671B", 671e9),
+        ("1.13T", 1.13e12),
+        ("1.20T", 1.2e12),
+        ("518B", 518e9),
         ("69", 69),
         ("1,234", 1234),
         ("3430/13.0K", 3430),  # first number wins
@@ -36,14 +39,36 @@ def test_parse_number_handles_thousands_separator():
     assert parse_number("1.234") == pytest.approx(1234)
 
 
+def test_parse_numbers_does_not_fuse_space_separated_values():
+    """A space separates values, it is not a thousands separator.
+
+    Region text is produced by joining OCR lines with spaces, so a
+    space-tolerant number regex would fuse 'gems gold' into one number -- and
+    since the second carries a magnitude suffix, the result would be off by a
+    factor of a billion.
+    """
+    assert parse_numbers("89 1.20T") == pytest.approx([89, 1.2e12])
+    assert parse_number("89 1.20T") == pytest.approx(89)
+    assert parse_numbers("Current workers 2/5") == pytest.approx([2, 5])
+    assert parse_numbers("") == []
+
+
+def test_parse_numbers_keeps_order():
+    assert parse_numbers("1.13T 10.2B 00:28") == pytest.approx([1.13e12, 10.2e9, 0, 28])
+
+
 def test_parse_number_none_when_no_digits():
     assert parse_number("PROMOTE") is None
     assert parse_number("") is None
 
 
-def test_parse_number_negative_and_spaces():
+def test_parse_number_negative():
     assert parse_number("-500") == pytest.approx(-500)
-    assert parse_number("1 234") == pytest.approx(1234)
+
+
+def test_space_separated_digits_are_two_values_not_one():
+    """Deliberate: a space is a value separator here, not a thousands grouping."""
+    assert parse_numbers("1 234") == pytest.approx([1, 234])
 
 
 # --------------------------------------------------------------------------- #
