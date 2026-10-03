@@ -129,6 +129,32 @@ def test_nav_bar_region_is_readable(ocr_engine):
         assert label in texts, f"{label} missing from nav bar; read {sorted(texts)}"
 
 
+@pytest.mark.parametrize("fixture,screen", [("village", "village"), ("adventure_hub", "adventure_hub")])
+def test_padded_ocr_boxes_stay_inside_the_frame(ocr_engine, fixture, screen):
+    """Regression: the padding offset used to be applied with the wrong sign.
+
+    The nav bar is padded by ~76px at the top; adding that offset instead of
+    subtracting it put every detected box below the bottom of the image
+    (y=1554 in a 1440-tall frame).  Classification only reads text so it hid
+    there harmlessly -- but any click aimed at an OCR box would have missed.
+    """
+    path = fixture_image(fixture)
+    if not path.exists():
+        pytest.skip("fixture not present")
+    frame = ImageBackend(str(path)).grab()
+    fw, fh = frame.size
+    spec = _classifier(ocr_engine).get(screen)
+
+    checked = 0
+    for name, box in spec.region_px(frame.size).items():
+        for line in ocr_engine.read(frame.crop(box)):
+            x1, y1, x2, y2 = line.box
+            assert 0 <= x1 < x2 <= fw, f"{name}: x range {line.box} outside 0..{fw}"
+            assert 0 <= y1 < y2 <= fh, f"{name}: y range {line.box} outside 0..{fh}"
+            checked += 1
+    assert checked > 0, "no text detected at all -- test would pass vacuously"
+
+
 def test_top_bar_currency_is_readable(ocr_engine):
     path = fixture_image("adventure_hub")
     if not path.exists():

@@ -97,13 +97,20 @@ class Ocr:
     def read(self, frame: Frame | np.ndarray, min_score: float = 0.5) -> list[TextLine]:
         """OCR an image, returning lines ordered top-to-bottom.
 
-        Wide-short crops are padded first — see :func:`pad_for_ocr`.
+        Wide-short crops are padded first — see :func:`pad_for_ocr`.  Any
+        detected box is then mapped back out of padded space, so returned boxes
+        are always in the caller's coordinates.
         """
         img = frame.image if isinstance(frame, Frame) else frame
         origin = frame.origin if isinstance(frame, Frame) else (0, 0)
 
         img, dx, dy = pad_for_ocr(img)
-        origin = (origin[0] + dx, origin[1] + dy)
+        # The padded image's (0,0) sits at (-dx, -dy) in the crop, so the crop's
+        # screen origin must shift *back* by the padding.  Adding instead of
+        # subtracting pushes every box out of the frame: the 921x79 nav bar is
+        # padded by +76px at the top, and its labels came back at y=1554 in a
+        # 1440-tall frame instead of y=1402.
+        origin = (origin[0] - dx, origin[1] - dy)
 
         result, _elapse = self._engine(img)
         if not result:
