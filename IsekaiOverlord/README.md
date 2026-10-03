@@ -19,17 +19,25 @@ clicking, rather than reading the game's memory or injecting into its process.
 |---|---|
 | Capture (Windows `PrintWindow`) | ✅ verified on the live Steam build |
 | OCR (RapidOCR + onnxruntime) | ✅ verified, coordinates match the UI |
-| Screen classifier | ✅ 2 screens mapped, both classify at 1.00 |
+| Screen classifier | ✅ 3 screens mapped, all classify ≥0.86 |
 | Actuators (dry-run / PostMessage / SendInput) | ✅ implemented and unit-tested |
 | Brain loop, verification, budgets, kill switch | ✅ implemented and unit-tested |
 | Economy upgrade planner | ✅ implemented, unit-tested |
-| Village routine | ⚠️ **logic done, blocked on real Village-screen frames** |
-| Tests | ✅ 90 passing |
+| Village building regions (7 buildings) | ✅ calibrated — costs and incomes read correctly |
+| Village routine | ⚠️ **logic done, blocked on the meaning of the on-screen numbers** |
+| Tests | ✅ 93 passing, 1 xfailed |
 
 **Honest summary:** the perception and control stack is finished and proven
-against the real game. The first automation routine is written but refuses to
-run because the layout data it needs (which pixel is the Market's upgrade
-button) hasn't been captured yet. It says so out loud instead of guessing.
+against the real game, including calibrated read regions for all seven village
+buildings. The first automation routine is written but still refuses to run:
+its planner needs to know whether the big number on each building card is a
+*cost* or *accumulated yield*, and guessing wrong would spend coins stupidly.
+It says so out loud instead of guessing.
+
+One known weakness is tracked rather than hidden: OCR reads `b2_income` as
+`1.151` instead of `1.15T` (the suffix misreads as a digit). A misread suffix
+changes a value by 10⁹, so the planner must not trust these numbers until
+there's a plausibility check — see the xfail test in `tests/test_screens.py`.
 
 ## Quick start
 

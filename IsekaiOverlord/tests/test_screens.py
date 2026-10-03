@@ -32,6 +32,7 @@ def _classifier(ocr_engine):
     [
         ("adventure_hub", "adventure_hub"),
         ("character_sympathy", "character_sympathy"),
+        ("village", "village"),
     ],
 )
 def test_real_frames_classify_correctly(ocr_engine, fixture, expected):
@@ -44,6 +45,70 @@ def test_real_frames_classify_correctly(ocr_engine, fixture, expected):
     assert cls.name == expected, f"got {cls.name!r}: {cls.evidence}"
     assert cls.confidence >= 0.6
     assert cls.known
+
+
+def test_village_building_costs_are_readable(ocr_engine):
+    """Regression: the cost regions must actually yield their numbers.
+
+    These are 110x33 crops sitting under a stylised font; without vertical
+    padding they read as empty, and at 90px wide the longer values truncate
+    ("100+22" -> "100+2"), which would silently misprice an upgrade.
+    """
+    path = fixture_image("village")
+    if not path.exists():
+        pytest.skip("fixture not present")
+    frame = ImageBackend(str(path)).grab()
+    classifier = _classifier(ocr_engine)
+    spec = classifier.get("village")
+    assert spec is not None
+
+    expected = {
+        "b1_cost": "1010", "b2_cost": "10022", "b3_cost": "503",
+        "b4_cost": "756", "b5_cost": "1002", "b6_cost": "1353", "b7_cost": "1504",
+    }
+    regions = spec.region_px(frame.size)
+    got = {}
+    for name, want in expected.items():
+        lines = ocr_engine.read(frame.crop(regions[name]))
+        got[name] = "".join(ch for ch in " ".join(ln.text for ln in lines) if ch.isdigit())
+    assert got == expected, f"cost regions misread: {got}"
+
+
+def test_village_building_incomes_are_readable(ocr_engine):
+    """Income values carry a magnitude suffix (B/T) -- if OCR drops or mangles it
+    the number is wrong by a factor of a billion."""
+    path = fixture_image("village")
+    if not path.exists():
+        pytest.skip("fixture not present")
+    frame = ImageBackend(str(path)).grab()
+    classifier = _classifier(ocr_engine)
+    spec = classifier.get("village")
+    regions = spec.region_px(frame.size)
+
+    expected = {
+        "b1_income": "1.02T", "b3_income": "936B", "b4_income": "997B",
+        "b5_income": "777B", "b6_income": "1.20T", "b7_income": "988B",
+    }
+    for name, want in expected.items():
+        lines = ocr_engine.read(frame.crop(regions[name]))
+        text = "".join(ln.text for ln in lines).replace(" ", "")
+        assert text == want, f"{name}: expected {want!r}, read {text!r}"
+
+
+@pytest.mark.xfail(
+    reason="known OCR weakness: the 'T' suffix in b2_income reads as '1' "
+    "('1.15T' -> '1.151'). A dropped/misread suffix changes a value by 1e9, so "
+    "this is tracked rather than hidden. Needs a suffix-plausibility check "
+    "before the economy planner is allowed to trust these numbers."
+)
+def test_village_b2_income_suffix(ocr_engine):
+    path = fixture_image("village")
+    if not path.exists():
+        pytest.skip("fixture not present")
+    frame = ImageBackend(str(path)).grab()
+    spec = _classifier(ocr_engine).get("village")
+    lines = ocr_engine.read(frame.crop(spec.region_px(frame.size)["b2_income"]))
+    assert "".join(ln.text for ln in lines).replace(" ", "") == "1.15T"
 
 
 def test_nav_bar_region_is_readable(ocr_engine):

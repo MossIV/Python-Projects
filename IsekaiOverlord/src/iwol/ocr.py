@@ -55,18 +55,21 @@ def _engine():
 
 
 def pad_for_ocr(
-    img: np.ndarray, max_aspect: float = 4.0, min_height: int = 32
+    img: np.ndarray, max_aspect: float = 4.0, min_height: int = 96
 ) -> tuple[np.ndarray, int, int]:
     """Pad a crop vertically so the detector can actually see its text.
 
     Why this exists: RapidOCR's detection model silently returns **nothing** for
-    very wide, short crops.  Measured on this game's 2560x1440 frames, a
-    921x79 strip of the bottom nav (aspect 11.7:1) detects 0 boxes, while the
-    same strip padded to 921x231 (aspect 4:1) detects all five labels.  Padding
-    with either replicated edges or black both work; upscaling 2x does *not*.
+    very wide, short crops, and mangles small ones.  Measured on this game's
+    2560x1440 frames:
 
-    So any UI region that is a wide strip — nav bars, currency bars, stat rows —
-    must be padded before OCR or it reads as empty and the screen looks unknown.
+    * a 921x79 nav bar (aspect 11.7:1) detects 0 boxes; padded to aspect 4:1 it
+      detects all five labels;
+    * a 90x34 number crop reads as ``[]`` raw, but ``['1.02T']`` once padded to
+      a 96px height.  Padding to only 64 px is *unstable* -- it splits the value
+      into ``['1.', '02T']`` -- so the floor is deliberately generous.
+
+    Padding with replicated edges or black both work; upscaling 2x does **not**.
 
     Returns ``(padded, dx, dy)`` where dx/dy are the pixel offsets of the
     original content inside the padded image, so coordinates stay correct.
