@@ -29,6 +29,7 @@
       },
       "all_of": ["Temple", "Bank", "Residents", "Companions", "Dungeon"],
       "any_of": ["Adventure", "Tasks", "Deals"],
+      "probe_regions": ["bottom_nav"],
       "min_score": 0.6
     },
     {
@@ -42,6 +43,7 @@
       },
       "all_of": ["Sympathy", "Destiny"],
       "any_of": ["Promote", "Sympathy Points", "Skills", "Main", "Friend"],
+      "probe_regions": ["char_nav"],
       "min_score": 0.6
     },
     {
@@ -87,6 +89,7 @@
       },
       "all_of": ["Temple", "Bank", "Residents", "Journey"],
       "any_of": ["Income", "Goal", "Expedition"],
+      "probe_regions": ["bottom_nav"],
       "min_score": 0.6
     },
     {
@@ -105,8 +108,9 @@
         "add_workers_btn": [0.1602, 0.8681, 0.1094, 0.0694],
         "back_btn": [0.945, 0.02, 0.05, 0.06]
       },
-      "all_of": ["Current workers", "Available workers", "UPGRADE"],
-      "any_of": ["Girls", "Pets", "ADD THE"],
+      "all_of": ["Current workers", "Available workers"],
+      "any_of": ["UPGRADE", "Girls", "Pets", "ADD THE"],
+      "probe_regions": ["workers_header", "available_workers"],
       "min_score": 0.6
     }
   ]

@@ -27,7 +27,7 @@ clicking, rather than reading the game's memory or injecting into its process.
 | Building panel (upgrade + workers) | ✅ calibrated, `upgrade_btn` reads `UPGRADE 1.13T` |
 | Village routine | ✅ opens each building's panel in turn |
 | Building panel routine | ✅ assigns workers, then upgrades within budget |
-| Tests | ✅ 116 passing, 1 xfailed |
+| Tests | ✅ 125 passing, 1 xfailed |
 
 **Honest summary:** the whole loop runs end to end on real screens — capture →
 recognise → decide → click → verify — with the two routines chained: the village
@@ -36,6 +36,7 @@ upgrades if the cost is affordable and inside the run budget, then leaves.
 
 The routines have **not yet been run armed against the live game** — that needs
 your go-ahead, and `tools/run.py` stays in dry-run until you pass `--arm`.
+See **[docs/vm-setup.md](docs/vm-setup.md)** for running it in a VM.
 
 ### What the UI actually does (established by experiment, not assumption)
 
@@ -110,6 +111,15 @@ window is behind something else. Only *clicking* may require focus.
 **Region OCR, not full-frame OCR.** A full 2560×1440 frame costs ~2.4 s in
 RapidOCR, almost all of it detection. Screens declare the regions they care
 about, and each crop costs ~50 ms.
+
+**Identification is two-stage, and reads are lazy.** Naively, classifying a
+screen means OCR'ing every region of every screen — ~28 regions, ~16 s per step.
+Instead each screen names a few `probe_regions` containing its mandatory
+keywords; stage 1 reads only those (~4 regions), stage 2 reads nothing more, and
+the remaining regions are OCR'd **only when a routine actually asks for one**.
+That took a step from ~16 s to ~2.5 s, and the village routine — which only needs
+region *geometry* to click — now costs no extra OCR at all. If two screens match
+the probes, it refuses the fast path and reads everything rather than guess.
 
 **Wide UI strips must be padded before OCR.** RapidOCR's detector silently
 returns *zero* boxes for very wide, short crops. A 921×79 nav bar (aspect
