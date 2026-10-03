@@ -1,0 +1,48 @@
+{
+  "_comment": [
+    "Screen definitions. Region rectangles are FRACTIONS of the frame",
+    "(x, y, w, h in 0..1) so one definition works at any resolution.",
+    "Keyword lists are matched against OCR text with punctuation/spacing stripped.",
+    "",
+    "A region NAME is shared across specs on purpose: the classifier OCRs each",
+    "distinct region once per frame and pools the text, so 'top_bar' means the",
+    "same thing wherever it appears.",
+    "",
+    "STATUS: 'adventure_hub' and 'character_sympathy' are populated from real",
+    "frames on the Steam build (v2.21, 2560x1440) and are covered by",
+    "tests/test_screens.py. Add new screens with tools/probe.py + tools/tour.py.",
+    "",
+    "An unlisted screen classifies as 'unknown' and HALTS the brain. That is",
+    "deliberate: guessing on an unseen screen means clicking blind."
+  ],
+  "screens": [
+    {
+      "name": "adventure_hub",
+      "description": "Main combat/adventure hub. Stage banner top-centre, hero card top-left, left icon rail (Tasks, Deals, tower timers), quest panel bottom-left, and the persistent bottom nav.",
+      "regions": {
+        "top_bar": [0.70, 0.0, 0.29, 0.06],
+        "stage_label": [0.40, 0.0, 0.2, 0.06],
+        "hero_card": [0.0, 0.0, 0.3, 0.12],
+        "left_rail": [0.0, 0.17, 0.115, 0.5],
+        "quest_panel": [0.06, 0.72, 0.22, 0.09],
+        "bottom_nav": [0.0, 0.945, 0.36, 0.055]
+      },
+      "all_of": ["Temple", "Bank", "Residents", "Companions", "Dungeon"],
+      "any_of": ["Adventure", "Tasks", "Deals"],
+      "min_score": 0.6
+    },
+    {
+      "name": "character_sympathy",
+      "description": "Character detail card reached from the roster. Left nav Main/Sympathy/Skills/Destiny, right-side card with name, rarity, skill, level and PROMOTE.",
+      "regions": {
+        "char_nav": [0.04, 0.27, 0.1, 0.45],
+        "top_bar": [0.70, 0.0, 0.29, 0.06],
+        "right_panel": [0.72, 0.09, 0.27, 0.92],
+        "bottom_right": [0.72, 0.88, 0.28, 0.12]
+      },
+      "all_of": ["Sympathy", "Destiny"],
+      "any_of": ["Promote", "Sympathy Points", "Skills", "Main", "Friend"],
+      "min_score": 0.6
+    }
+  ]
+}

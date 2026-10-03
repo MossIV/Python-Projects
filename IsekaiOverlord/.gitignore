@@ -1,0 +1,19 @@
+# runtime output
+runs/
+tours/
+*.jsonl
+overlay*.png
+
+# python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.venv/
+venv/
+*.egg-info/
+
+# editors / os
+.vscode/
+.idea/
+Thumbs.db
+desktop.ini
